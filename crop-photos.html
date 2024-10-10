@@ -3,110 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Cropper</title>
+    <title>Image Cropper with Bootstrap</title>
+    <!-- Include Bootstrap CSS from CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <!-- Include Cropper.js library from CDN -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <!-- Include JSZip library for ZIP functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <style>
         #imageContainer {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
+            justify-content: center;
         }
         .image-wrapper {
             text-align: center;
-            flex: 1 1 100%; /* Adjust to control multiple image display */
+            flex: 1 1 45%;
+            margin: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         img {
-            max-width: 100%; /* Ensure the image doesn't exceed container width */
+            max-width: 100%;
+            border-radius: 5px;
         }
     </style>
 </head>
-<body>
-    <h2 style="text-align: center;">Crop Multiple Images to 1:1 Aspect Ratio</h2>
-    <div style="text-align: center;">
-        <input type="file" id="imageInput" accept="image/*" multiple />
-        <button id="downloadAllBtn" disabled>Download All Cropped Images</button>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Crop Images and Download</h2>
+    <div class="text-center mb-4">
+        <input type="file" class="form-control d-inline-block w-auto" id="imageInput" accept="image/*" multiple />
+        <button id="downloadBtn" class="btn btn-primary mt-2" disabled>Download Cropped Image(s)</button>
     </div>
-    <div id="imageContainer"></div>
+    <div id="imageContainer" class="row justify-content-center"></div>
+</div>
 
-    <!-- Include Cropper.js and other necessary scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script>
-        const imageInput = document.getElementById('imageInput');
-        const imageContainer = document.getElementById('imageContainer');
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        let croppers = []; // Store multiple cropper instances
-        let originalFileNames = []; // Store file names
+<!-- Include Cropper.js and Bootstrap JS libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 
-        // Handle file input change event for multiple files
-        imageInput.addEventListener('change', function(event) {
-            const files = event.target.files;
-            if (files.length > 0) {
-                // Clear the previous content and cropper instances
-                imageContainer.innerHTML = '';
-                croppers = [];
-                originalFileNames = [];
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const imageContainer = document.getElementById('imageContainer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    let croppers = []; // Store multiple cropper instances
+    let originalFileNames = []; // Store file names
 
-                Array.from(files).forEach((file, index) => {
-                    const reader = new FileReader();
-                    originalFileNames.push(file.name.replace(/\.[^/.]+$/, "")); // Store file names without extension
-                    
-                    reader.onload = function(e) {
-                        // Create a container for each image
-                        const imageWrapper = document.createElement('div');
-                        imageWrapper.className = 'image-wrapper';
-                        imageWrapper.innerHTML = `<h4>${originalFileNames[index]}</h4><img id="image${index}" src="${e.target.result}" alt="Image ${index + 1}" />`;
-                        imageContainer.appendChild(imageWrapper);
-                        
-                        // Initialize Cropper for the new image
-                        const imageElement = document.getElementById(`image${index}`);
-                        const cropper = new Cropper(imageElement, {
-                            aspectRatio: 1, // Set aspect ratio to 1:1
-                            viewMode: 1,
-                            background: false,
-                        });
-                        
-                        // Store cropper instance
-                        croppers.push(cropper);
+    // Handle file input change event for multiple files
+    imageInput.addEventListener('change', function(event) {
+        const files = event.target.files;
+        if (files.length > 0) {
+            // Clear the previous content and cropper instances
+            imageContainer.innerHTML = '';
+            croppers = [];
+            originalFileNames = [];
 
-                        // Enable the download button once all images are processed
-                        if (croppers.length === files.length) {
-                            downloadAllBtn.disabled = false;
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-        });
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                originalFileNames.push(file.name.replace(/\.[^/.]+$/, "")); // Store file names without extension
 
-        // Handle download all button click event
-        downloadAllBtn.addEventListener('click', function() {
-            croppers.forEach((cropper, index) => {
-                if (cropper) {
-                    const canvas = cropper.getCroppedCanvas({
-                        width: 400,  // Output image width (optional)
-                        height: 400, // Output image height (optional)
+                reader.onload = function(e) {
+                    // Create a container for each image
+                    const imageWrapper = document.createElement('div');
+                    imageWrapper.className = 'image-wrapper col-md-5';
+                    imageWrapper.innerHTML = `
+                        <h4 class="text-truncate">${originalFileNames[index]}</h4>
+                        <img id="image${index}" src="${e.target.result}" alt="Image ${index + 1}" class="img-fluid mb-2"/>
+                    `;
+                    imageContainer.appendChild(imageWrapper);
+
+                    // Initialize Cropper for the new image
+                    const imageElement = document.getElementById(`image${index}`);
+                    const cropper = new Cropper(imageElement, {
+                        aspectRatio: 1, // Set aspect ratio to 1:1
+                        viewMode: 1,
+                        background: false,
                     });
 
-                    // Convert the canvas to a Blob in JPEG format
-                    canvas.toBlob(function(blob) {
-                        const url = URL.createObjectURL(blob);
-                        
-                        // Create download link and use the original filename with a .jpg extension
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `${originalFileNames[index]}.jpg`; // Save as .jpg format
-                        link.click();
+                    // Store cropper instance
+                    croppers.push(cropper);
 
-                        // Clean up resources
-                        URL.revokeObjectURL(url);
-                    }, 'image/jpeg'); // Specify JPEG format for the blob
-                }
+                    // Enable the download button once all images are processed
+                    if (croppers.length === files.length) {
+                        downloadBtn.disabled = false;
+                    }
+                };
+                reader.readAsDataURL(file);
             });
+        }
+    });
+
+    // Handle download button click event based on the number of files selected
+    downloadBtn.addEventListener('click', function() {
+        if (croppers.length === 1) {
+            // If only one image is selected, download it as a single file
+            downloadSingleImage(croppers[0], originalFileNames[0]);
+        } else if (croppers.length > 1) {
+            // If multiple images are selected, download all as a ZIP file
+            downloadAllAsZip();
+        }
+    });
+
+    // Download a single image as a separate file
+    function downloadSingleImage(cropper, fileName) {
+        if (cropper) {
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,  // Output image width (optional)
+                height: 400, // Output image height (optional)
+            });
+
+            // Convert the canvas to a Blob in JPEG format
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+
+                // Create download link and use the original filename with a .jpg extension
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${fileName}.jpg`; // Save as .jpg format
+                link.click();
+
+                // Clean up resources
+                URL.revokeObjectURL(url);
+            }, 'image/jpeg'); // Specify JPEG format for the blob
+        }
+    }
+
+    // Download all cropped images as a ZIP file
+    function downloadAllAsZip() {
+        const zip = new JSZip(); // Create a new JSZip instance
+        const folder = zip.folder("cropped_images"); // Create a folder for cropped images
+
+        // Collect all cropped images as blobs
+        let processedCount = 0; // Track processed images
+        croppers.forEach((cropper, index) => {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 400,  // Output image width (optional)
+                    height: 400, // Output image height (optional)
+                });
+
+                // Convert each canvas to a Blob and add it to the ZIP file
+                canvas.toBlob(function(blob) {
+                    folder.file(`${originalFileNames[index]}.jpg`, blob, { binary: true });
+                    processedCount++;
+
+                    // Once all images are added to the ZIP, generate and download it
+                    if (processedCount === croppers.length) {
+                        zip.generateAsync({ type: "blob" }).then(function(content) {
+                            const zipLink = document.createElement('a');
+                            zipLink.href = URL.createObjectURL(content);
+                            zipLink.download = "cropped_images.zip"; // Set ZIP file name
+                            zipLink.click();
+                            URL.revokeObjectURL(zipLink.href);
+                        });
+                    }
+                }, 'image/jpeg'); // Specify JPEG format for the blob
+            }
         });
-    </script>
+    }
+</script>
 </body>
 </html>
