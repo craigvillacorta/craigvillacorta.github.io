@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Splitter Utility</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+    <style>
+        .thumbnail-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #aaa; /* Add gray border around container */
+            padding: 10px;
+            width: 300px; /* Fixed width for thumbnail container */
+            margin-right: 20px; /* Add some spacing between containers */
+        }
+        .thumbnail-item {
+            margin-bottom: 10px; /* Add spacing between thumbnails */
+            position: relative;
+            border: 1px solid #b4b4b4; /* Add gray border around container */
+        }
+        .thumbnail-item input[type="checkbox"] {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            z-index: 1;
+        }
+        .thumbnail {
+            width: 100%; /* Set width to container width for single-column */
+            height: auto; /* Auto height to maintain aspect ratio */
+        }
+        .preview {
+            border: 1px solid #aaa; /* Add gray border around preview */
+            height: 600px; /* Set a height for the preview container */
+            width: 700px;
+            overflow: auto; /* Enable both vertical and horizontal scrolling */
+        }
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            gap: 10px;
+            width: 700px;
+        }
+        .control-panel-footer {
+            width: 600px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+        }
+        .preview-wrapper {
+            flex-grow: 1; /* Allow preview region to expand */
+            height: 600px;
+        }
+        .file-input {
+            width: 100%; /* Make the input full width within the parent */
+            max-width: 300px; /* Constrain the width to 300px */
+            margin-bottom: 10px; /* Add some margin below */
+        }
+    </style>
+</head>
+<body>
+    <h2>Select a PDF to Split</h2>
+    <div class="container">
+        <div>
+            <input type="file" id="file-input" class="form-control file-input" accept=".pdf">
+            <div id="thumbnail-container" class="thumbnail-container"></div>
+        </div>
+        <div class="preview-wrapper">
+            <div class="control-panel">
+                <button id="prev-btn" class="btn btn-secondary" disabled>&#60;&#60;</button>
+                <button id="next-btn" class="btn btn-secondary" disabled>&#62;&#62;</button>
+                <span id="page-info">Page 0 of 0</span>
+                <button id="zoom-in-btn" class="btn btn-info">+</button>
+                <button id="zoom-out-btn" class="btn btn-info">-</button>
+            </div>
+            <div id="preview-container" class="preview"></div>
+            <div class="control-panel-footer">
+            <div>
+                <label for="text1" class="form-label">Text Box 1</label>
+                <input type="text" id="text1" class="form-control">
+            </div>
+            <div>
+                <label for="text2" class="form-label">Text Box 2</label>
+                <input type="text" id="text2" class="form-control">
+            </div>
+        </div>
+            <button id="save-btn" class="btn btn-primary">Save Selected Pages</button>
+        </div>
+    </div>
+
+    <script>
+        let pdfDoc = null;
+        let pdfLibDoc = null;
+        let selectedPages = [];
+        let currentPageIndex = 0;
+        let zoomLevel = 1;
+
+        document.getElementById('file-input').addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                const fileReader = new FileReader();
+                fileReader.onload = function() {
+                    const typedArray = new Uint8Array(this.result);
+                    loadPDF(typedArray);
+                    loadPDFLib(typedArray);
+                };
+                fileReader.readAsArrayBuffer(file);
+            }
+        });
+
+        async function loadPDF(pdfData) {
+            pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            const thumbnailContainer = document.getElementById('thumbnail-container');
+            thumbnailContainer.innerHTML = '';
+            selectedPages = [];
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const canvas = document.createElement('canvas');
+                canvas.className = 'thumbnail';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.dataset.page = pageNum;
+
+                const thumbnailItem = document.createElement('div');
+                thumbnailItem.className = 'thumbnail-item';
+                thumbnailItem.appendChild(checkbox);
+                thumbnailItem.appendChild(canvas);
+
+                thumbnailContainer.appendChild(thumbnailItem);
+
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 0.8 }); // Higher scale for better quality thumbnails
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const context = canvas.getContext('2d');
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                checkbox.addEventListener('change', function() {
+                    const pageNumber = parseInt(this.dataset.page);
+                    if (this.checked) {
+                        selectedPages.push(pageNumber);
+                    } else {
+                        selectedPages = selectedPages.filter(p => p !== pageNumber);
+                    }
+                    updatePreview();
+                });
+            }
+        }
+
+        async function loadPDFLib(pdfData) {
+            pdfLibDoc = await PDFLib.PDFDocument.load(pdfData);
+        }
+
+        function updatePreview() {
+            if (selectedPages.length > 0) {
+                currentPageIndex = 0;
+                document.getElementById('prev-btn').disabled = false;
+                document.getElementById('next-btn').disabled = false;
+                showPagePreview(selectedPages[currentPageIndex]);
+                updatePageInfo();
+            } else {
+                currentPageIndex = 0;
+                document.getElementById('prev-btn').disabled = true;
+                document.getElementById('next-btn').disabled = true;
+                document.getElementById('preview-container').innerHTML = '';
+                document.getElementById('page-info').textContent = 'Page 0 of 0';
+            }
+        }
+
+        function updatePageInfo() {
+            const pageInfo = `Page ${currentPageIndex + 1} of ${selectedPages.length}`;
+            document.getElementById('page-info').textContent = pageInfo;
+        }
+
+        async function showPagePreview(pageNumber) {
+            if (pdfDoc) {
+                const page = await pdfDoc.getPage(pageNumber);
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const viewport = page.getViewport({ scale: zoomLevel });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                const previewContainer = document.getElementById('preview-container');
+                previewContainer.innerHTML = '';
+                previewContainer.appendChild(canvas);
+            }
+        }
+
+        document.getElementById('prev-btn').addEventListener('click', function() {
+            if (currentPageIndex > 0) {
+                currentPageIndex--;
+                showPagePreview(selectedPages[currentPageIndex]);
+                updatePageInfo();
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', function() {
+            if (currentPageIndex < selectedPages.length - 1) {
+                currentPageIndex++;
+                showPagePreview(selectedPages[currentPageIndex]);
+                updatePageInfo();
+            }
+        });
+
+        document.getElementById('zoom-in-btn').addEventListener('click', function() {
+            zoomLevel += 0.2;
+            showPagePreview(selectedPages[currentPageIndex]);
+        });
+
+        document.getElementById('zoom-out-btn').addEventListener('click', function() {
+            if (zoomLevel > 0.4) {
+                zoomLevel -= 0.2;
+                showPagePreview(selectedPages[currentPageIndex]);
+            }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', async function() {
+            if (selectedPages.length > 0) {
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+                for (const pageNum of selectedPages) {
+                    const [copiedPage] = await newPdfDoc.copyPages(pdfLibDoc, [pageNum - 1]);
+                    newPdfDoc.addPage(copiedPage);
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+
+                const text1 = document.getElementById('text1').value || 'default1';
+                const text2 = document.getElementById('text2').value || 'default2';
+                link.href = URL.createObjectURL(blob);
+                link.download = `${text1}_${text2}.pdf`;
+                link.click();
+            } else {
+                alert('Please select pages to save.');
+            }
+        });
+    </script>
+</body>
+</html>
