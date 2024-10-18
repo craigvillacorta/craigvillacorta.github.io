@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto PDF Splitter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+</head>
+<body>
+    <h1>Auto PDF Splitter</h1>
+    <p>POC to split a batch PDF files that have been pre-sorted and manually indexed with cover sheet delimiters.</p>
+    <p>Uses pdf.js library to 1)read PDF file, 2) split on #newfile token, 3) write separate PDF files using given filenaming convention</p>
+    <input type="file" id="fileInput" accept=".pdf" />
+    <button onclick="processFile()">Process File</button>
+    <p id="status">Select a PDF file to start processing.</p>
+    
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
+
+        async function processFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to process.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const fileType = file.type;
+
+            if (fileType === 'application/pdf') {
+                try {
+                    await processPDF(file);
+                } catch (error) {
+                    console.error('Error processing PDF:', error);
+                    alert('An error occurred while processing the PDF. See console for details.');
+                }
+            } else {
+                alert('Unsupported file type. Please select a PDF.');
+            }
+        }
+
+        async function processPDF(file) {
+            const pdfBytes = await file.arrayBuffer();
+
+            // Load the PDF using pdf.js for text extraction
+            const pdfDoc = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
+            const splitPoints = await findSplitPoints(pdfDoc);
+
+            if (splitPoints.length === 0) {
+                console.warn('No split points found! This means the #newfile markers were not detected.');
+                return;
+            }
+
+            // Use pdf-lib to split the PDF into separate files based on content and markers
+            const splitDocs = await createSplitPDFs(pdfBytes, splitPoints);
+
+            // Download the results as a zip file
+            await downloadAsZip(splitDocs);
+        }
+
+        async function findSplitPoints(pdfDoc) {
+            const splitPoints = [];
+            const numPages = pdfDoc.numPages;
+            let currentContent = '';
+
+            for (let i = 1; i <= numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Join extracted text items, preserving original formatting and spaces
+                let rawText = textContent.items.map(item => item.str).join('');
+
+                console.log(`Page ${i} raw text content:`, rawText);
+
+                const regex = /#newfile_(\S+)/gi;
+                let match;
+                while ((match = regex.exec(rawText)) !== null) {
+                    if (currentContent) {
+                        splitPoints.push(currentContent);
+                    }
+                    currentContent = { page: i - 1, fileName: match[1].trim(), content: '' };
+                }
+                if (currentContent) {
+                    currentContent.content += rawText + "\n\n"; // Preserve spacing and line breaks
+                }
+            }
+            if (currentContent) {
+                splitPoints.push(currentContent);
+            }
+
+            console.log('Identified split points:', splitPoints);
+            return splitPoints;
+        }
+
+        async function createSplitPDFs(pdfBytes, splitPoints) {
+            const splitDocs = [];
+            const originalPdf = await PDFLib.PDFDocument.load(pdfBytes);
+
+            for (const point of splitPoints) {
+                const newPdf = await PDFLib.PDFDocument.create();
+
+                // Create a new page and add the preserved content
+                const newPage = newPdf.addPage([600, 800]);
+                const font = await newPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+
+                // Draw text with correct spacing and line breaks
+                newPage.drawText(point.content, {
+                    x: 50,
+                    y: 750,
+                    font: font,
+                    size: 12,
+                    lineHeight: 14,  // Adjust line height for better spacing
+                    maxWidth: 500,
+                });
+
+                splitDocs.push({ pdfDoc: newPdf, fileName: point.fileName });
+            }
+
+            return splitDocs;
+        }
+
+        async function downloadAsZip(docs) {
+            const zip = new JSZip();
+
+            for (const doc of docs) {
+                const pdfBytes = await doc.pdfDoc.save();
+                zip.file(doc.fileName + ".pdf", pdfBytes);
+            }
+
+            zip.generateAsync({ type: 'blob' }).then(content => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(content);
+                a.download = 'split_files.zip';
+                a.click();
+                document.getElementById('status').innerText = 'Processing complete. Files downloaded as a zip.';
+            });
+        }
+    </script>
+</body>
+</html>
