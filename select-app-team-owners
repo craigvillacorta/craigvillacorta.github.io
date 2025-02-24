@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Application Ownership Decision Tool</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+    }
+    #wheelContainer {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 40px auto;
+    }
+    /* The canvas will be rotated with a smooth transition */
+    #wheelCanvas {
+      width: 300px;
+      height: 300px;
+      transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    /* Pointer: now flipped so the red triangle points downward */
+    #pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 20px solid red;
+      z-index: 2;
+    }
+    #spinButton {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Application Ownership Decision Tool</h1>
+  <div id="wheelContainer">
+    <div id="pointer"></div>
+    <canvas id="wheelCanvas" width="300" height="300"></canvas>
+  </div>
+  <button id="spinButton">Spin</button>
+
+  <script>
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const spinButton = document.getElementById("spinButton");
+
+    // Define the teams and colors for each segment
+    const teams = ["Spencer", "Anna", "Eric"];
+    const colors = ["#FF6347", "#3CB371", "#1E90FF"];
+    const numSegments = teams.length;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2;
+    const sliceAngle = 2 * Math.PI / numSegments;
+
+    // Function to draw the wheel with a given rotation (in radians)
+    function drawWheel(rotation = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < numSegments; i++) {
+        const startAngle = rotation + i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
+        // Draw the segment
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        
+        // Draw the team name
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText(teams[i], radius - 10, 10);
+        ctx.restore();
+      }
+    }
+
+    // Draw the initial wheel
+    drawWheel();
+
+    let currentRotation = 0; // track total rotation
+
+    spinButton.addEventListener("click", function() {
+      spinButton.disabled = true; // disable button during spin
+      
+      // Calculate a random rotation:
+      // - Choose between 3 to 5 extra full spins
+      // - Add a random final angle between 0 and 2π
+      const extraSpins = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5 spins
+      const finalAngle = Math.random() * 2 * Math.PI;
+      const totalRotation = extraSpins * 2 * Math.PI + finalAngle;
+      currentRotation += totalRotation;
+
+      // Start the spin animation using CSS transform
+      canvas.style.transform = `rotate(${currentRotation}rad)`;
+
+      // Listen for the end of the transition to determine the winning segment
+      canvas.addEventListener("transitionend", function handleTransition() {
+        // The pointer is at the top.
+        // In the canvas coordinate system, 0 rad is to the right,
+        // so the top (12 o'clock) corresponds to -90° (or 3π/2).
+        // Adjust the current rotation to find which segment is at the pointer.
+        let winningAngle = (-currentRotation - Math.PI/2) % (2 * Math.PI);
+        if (winningAngle < 0) winningAngle += 2 * Math.PI;
+        const winningIndex = Math.floor(winningAngle / sliceAngle);
+        
+        alert("The selected team is: " + teams[winningIndex]);
+        spinButton.disabled = false;
+        
+        // Remove this event listener so it doesn't fire multiple times.
+        canvas.removeEventListener("transitionend", handleTransition);
+      });
+    });
+  </script>
+</body>
+</html>
