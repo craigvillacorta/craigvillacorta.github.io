@@ -1,0 +1,23 @@
+{
+  "name": "barcode-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node scripts/build.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.js",
+    "icons": "node scripts/icons.mjs"
+  },
+  "dependencies": {
+    "@zxing/browser": "0.1.5",
+    "@zxing/library": "0.21.3",
+    "jsbarcode": "3.12.1",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.80",
+    "vite": "6.4.1"
+  }
+}
