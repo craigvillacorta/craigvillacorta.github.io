@@ -15,22 +15,20 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <a class="brand" href="./" aria-label="Barcode Tools home"><span class="brand-mark" aria-hidden="true">▥</span><span>Barcode Tools<span class="brand-caption">A little utility. A lot of possibility.</span></span></a>
+        <a class="brand" href="./" aria-label="Barcode Tools home"><span class="brand-mark" aria-hidden="true">▥</span><span>Barcode Tools<span class="brand-caption">Minimalist barcode utility.</span></span></a>
         <span class="private-badge"><span></span> On your device</span>
       </header>
       <main>
-        <div class="intro"><p class="eyebrow">THE EVERYDAY CODE KIT</p><h1>Small codes.<br><span>Made simple.</span></h1><p>Scan what’s in front of you.<br class="mobile-break"> Create what you need next.</p></div>
         <section class="tool" aria-label="Barcode tools">
           <div class="tabs" role="tablist" aria-label="Choose a tool">
             <button id="read-tab" role="tab" aria-selected="true" aria-controls="read-panel" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M7 8v8m4-8v8m3-8v8m3-8v8"/></svg>Read a code</button>
             <button id="create-tab" role="tab" aria-selected="false" aria-controls="create-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h5v5H4zM15 4h5v5h-5zM4 15h5v5H4zM15 15h2v2h3v3h-5z"/></svg>Create a code</button>
           </div>
           <section id="read-panel" role="tabpanel" aria-labelledby="read-tab">
-            <div class="panel-heading"><div><h2>Point. Scan. Done.</h2><p>QR code, Code 128, or Code 39.</p></div><span class="step">01 / READ</span></div>
+            <div class="panel-heading"><div><h2 class="read-heading">Scan to inspect a code's contents</h2><p>QR code, Code 128, or Code 39.</p></div></div>
             <div id="scanner" class="scanner">
               <video id="camera" playsinline muted aria-label="Live camera preview" hidden></video>
               <div class="viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i><svg viewBox="0 0 120 72"><path d="M14 16v40m8-40v40m7-40v40m12-40v40m6-40v40m9-40v40m12-40v40m7-40v40m6-40v40m12-40v40m10-40v40"/></svg></div>
-              <div id="camera-placeholder" class="camera-placeholder"><p>Your camera, ready when you are.</p><span>Position a code inside the frame</span></div>
               <span id="live-badge" class="live-badge" hidden>CAMERA ON</span>
             </div>
             <button id="start-scan" class="button primary wide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/></svg>Open camera</button>
@@ -44,7 +42,7 @@
             <p class="privacy-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v10H6zM8 10V7a4 4 0 0 1 8 0v3"/></svg>Camera frames and code contents stay in your browser.</p>
           </section>
           <section id="create-panel" role="tabpanel" aria-labelledby="create-tab" hidden>
-            <div class="panel-heading"><div><h2>A code of your own.</h2><p>A link, a label, a little bit of anything.</p></div><span class="step">02 / CREATE</span></div>
+            <div class="panel-heading"><div><h2>Create your own barcode</h2></div></div>
             <label class="field-label" for="code-value">Your contents</label>
             <textarea id="code-value" rows="3" placeholder="Type or paste a value…" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="format-help create-error"></textarea>
             <div class="input-meta"><span>Spaces and line breaks are preserved</span><span id="character-count">0 characters</span></div>
@@ -55,9 +53,9 @@
             <div id="created-result" class="created-result" hidden><div class="result-heading"><h3>Ready to go.</h3><span id="created-format" class="format-tag"></span></div><div class="barcode-paper"><canvas id="barcode-canvas" role="img" aria-label="Generated barcode"></canvas></div><p id="created-value" class="created-value"></p><p id="barcode-size-note" class="field-help" hidden>Long barcode: share or save the full-size image for reliable scanning.</p><div class="actions"><button id="copy-image" class="button secondary">Copy image</button><button id="share-image" class="button primary">Share / save</button></div></div>
           </section>
         </section>
-        <div class="below-tool"><span>QR CODE <span>·</span> CODE 128 <span>·</span> CODE 39</span><p>No sign-up. No tracking. Just useful.</p></div>
+        <div class="below-tool"><span>QR CODE <span>·</span> CODE 128 <span>·</span> CODE 39</span><p>A simple tools. No sign-up. No tracking.</p></div>
       </main>
-      <footer><span>Less friction. More doing.</span><button id="install-help" type="button">Add to home screen <span aria-hidden="true">↗</span></button></footer>
+      <footer><button id="install-help" type="button">Add to home screen <span aria-hidden="true">↗</span></button></footer>
     </div>
     <dialog id="install-dialog"><h2>Always within reach.</h2><p>On iPhone or iPad, open this page in Safari, tap Share, then “Add to Home Screen.”</p><p>On Android, use your browser’s “Install app” or “Add to Home screen” option. On desktop, look for the install icon in the address bar.</p><p id="offline-help">Offline setup has not finished. Stay online until this message confirms the app is ready.</p><form method="dialog"><button class="button primary wide">Got it</button></form></dialog>
     <div id="toast" role="status" aria-live="polite" hidden></div>

@@ -1,5 +1,5 @@
-const CACHE = 'barcode-tools-9b153fdfb2a7';
-const FILES = ["./","./THIRD-PARTY-LICENSES.txt","./assets/generate-eqZeKm5I.js","./assets/index-Dva_UGN5.css","./assets/index-SnUWQ34z.js","./assets/scanner-DjhlR2Mw.js","./icon-192.png","./icon-512.png","./icon.svg","./index.html","./manifest.webmanifest"];
+const CACHE = 'barcode-tools-70ae5a94fe68';
+const FILES = ["./","./THIRD-PARTY-LICENSES.txt","./assets/generate-eqZeKm5I.js","./assets/index-CCHh28WN.js","./assets/index-CGu9l96_.css","./assets/scanner-DjhlR2Mw.js","./icon-192.png","./icon-512.png","./icon.svg","./index.html","./manifest.webmanifest"];
 const ALLOWED = new Set(FILES.map(path => new URL(path, self.registration.scope).href));
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)));

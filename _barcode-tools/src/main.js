@@ -33,7 +33,6 @@ function stopCamera() {
   $('camera').srcObject?.getTracks().forEach((track) => track.stop());
   $('camera').srcObject = null;
   $('camera').hidden = true;
-  $('camera-placeholder').hidden = false;
   $('live-badge').hidden = true;
   $('scanner').classList.remove('active');
   $('start-scan').hidden = !$('scan-result').hidden;
@@ -91,7 +90,6 @@ async function startCamera() {
     if (ticket !== scanTicket) { acquired.getTracks().forEach((track) => track.stop()); return; }
     stream = acquired;
     $('camera').hidden = false;
-    $('camera-placeholder').hidden = true;
     $('scanner').classList.add('active');
     $('live-badge').hidden = false;
     $('start-scan').hidden = true;
